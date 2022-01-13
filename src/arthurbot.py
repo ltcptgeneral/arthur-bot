@@ -3,34 +3,20 @@ from asyncio import sleep
 from sys import prefix
 import discord 
 from discord.ext import commands
+import random
+
+from config import get_samples, get_token, get_prefix, get_roleid
+
+config_path = "config.json"
 
 ffmpeg_options = {
 	'options': '-vn'
 }
 
-token = None
-
-with open("token", "r") as f:
-	token = f.read()
-	f.close()
+token = get_token(config_path)
 
 async def determine_prefix(bot, message):
-	prefix = None
-
-	with open("prefix", "r") as f:
-		prefix = f.read()
-		f.close()
-
-	return prefix
-
-def determine_roleid():
-	roleid = None
-
-	with open("roleid", "r") as f:
-		roleid = int(f.read())
-		f.close()
-
-	return roleid
+	return get_prefix(config_path)
 
 intents = discord.Intents.default()
 intents.members = True
@@ -70,10 +56,46 @@ async def setrole(ctx, *arg: discord.Role):
 
 		await ctx.send("set followable role to {0}".format(arg[0]))
 
+@bot.command()
+async def playonce(ctx, *arg):
+
+	if(len(arg) != 1):
+		await ctx.send("usage: playonce <soundfile>")
+
+	if(ctx.author.voice == None):
+		await ctx.send("you're not in a voice channel")
+
+	else:
+		if ctx.voice_client is not None:
+			await ctx.voice_client.move_to(ctx.author.voice.channel)
+
+		await ctx.author.voice.channel.connect()
+
+		"""
+		samples = get_samples(config_path)
+
+		ordered_samples = []
+		ordered_weights = []
+
+		for key, sample in samples.items():
+			ordered_samples.append(sample["path"])
+			ordered_weights.append(sample["weight"])
+
+		choice = random.choices(ordered_samples, ordered_weights, k = 1)[0]"""
+
+		choice = arg[0]
+
+		ctx.voice_client.play(discord.FFmpegPCMAudio(choice), after=lambda e: print('Player error: %s' % e) if e else None)
+
+		while ctx.voice_client.is_playing():
+			await sleep(0.01)
+
+		await ctx.voice_client.disconnect()
+
 @bot.event
 async def on_voice_state_update(member, before, after):
 
-	roleid = determine_roleid()
+	roleid = get_roleid(config_path)
 
 	if((member.id == bot.user.id) or (member.bot) or (roleid not in [role.id for role in member.roles]) or (before.channel == after.channel) or (after.channel == None)):
 		pass
@@ -92,7 +114,18 @@ async def on_voice_state_update(member, before, after):
 		def after(e):
 			print(str(e))
 
-		bot_connection.play(discord.FFmpegPCMAudio("sample.mp3"), after=lambda e: print('Player error: %s' % e) if e else None)
+		samples = get_samples(config_path)
+
+		ordered_samples = []
+		ordered_weights = []
+
+		for key, sample in samples.items():
+			ordered_samples.append(sample["path"])
+			ordered_weights.append(sample["weight"])
+
+		choice = random.choices(ordered_samples, ordered_weights, k = 1)[0]
+
+		bot_connection.play(discord.FFmpegPCMAudio(choice), after=lambda e: print('Player error: %s' % e) if e else None)
 
 		while bot_connection.is_playing():
 			await sleep(0.01)

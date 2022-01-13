@@ -62,7 +62,7 @@ async def playonce(ctx, *arg):
 	if(len(arg) != 1):
 		await ctx.send("usage: playonce <soundfile>")
 
-	if(ctx.author.voice == None):
+	elif(ctx.author.voice == None):
 		await ctx.send("you're not in a voice channel")
 
 	else:
@@ -70,18 +70,6 @@ async def playonce(ctx, *arg):
 			await ctx.voice_client.move_to(ctx.author.voice.channel)
 
 		await ctx.author.voice.channel.connect()
-
-		"""
-		samples = get_samples(config_path)
-
-		ordered_samples = []
-		ordered_weights = []
-
-		for key, sample in samples.items():
-			ordered_samples.append(sample["path"])
-			ordered_weights.append(sample["weight"])
-
-		choice = random.choices(ordered_samples, ordered_weights, k = 1)[0]"""
 
 		choice = arg[0]
 
@@ -93,27 +81,19 @@ async def playonce(ctx, *arg):
 		await ctx.voice_client.disconnect()
 
 @bot.event
-async def on_voice_state_update(member, before, after):
-
+async def on_voice_state_update(member: discord.Member, before, after):
+	vc_before = before.channel
+	vc_after = after.channel
+	
 	roleid = get_roleid(config_path)
 
 	if((member.id == bot.user.id) or (member.bot) or (roleid not in [role.id for role in member.roles]) or (before.channel == after.channel) or (after.channel == None)):
-		pass
+		return
 
 	else:
-
-		print("member {0} changed from {1} to {2}".format(member.id, before.channel, after.channel))
-		channel = after.channel
-		bot_connection = member.guild.voice_client
-
-		if bot_connection:
-			await bot_connection.move_to(channel)
-		else:
-			bot_connection = await channel.connect()
-
-		def after(e):
-			print(str(e))
-
+		channel = member.voice.channel
+		vc = await channel.connect()
+		
 		samples = get_samples(config_path)
 
 		ordered_samples = []
@@ -125,11 +105,11 @@ async def on_voice_state_update(member, before, after):
 
 		choice = random.choices(ordered_samples, ordered_weights, k = 1)[0]
 
-		bot_connection.play(discord.FFmpegPCMAudio(choice), after=lambda e: print('Player error: %s' % e) if e else None)
+		vc.play(discord.FFmpegPCMAudio(choice), after=lambda e: print('Player error: %s' % e) if e else None)
 
-		while bot_connection.is_playing():
+		while vc.is_playing():
 			await sleep(0.01)
 
-		await bot_connection.disconnect()
+		await vc.disconnect()
 
 bot.run(token)

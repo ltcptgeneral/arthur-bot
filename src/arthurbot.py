@@ -57,7 +57,7 @@ async def setrole(ctx, *arg: discord.Role):
 		await ctx.send("set followable role to {0}".format(arg[0]))
 
 @bot.command()
-async def playonce(ctx, *arg):
+async def testonce(ctx, *arg):
 
 	if(len(arg) != 1):
 		await ctx.send("usage: playonce <soundfile>")
@@ -66,12 +66,41 @@ async def playonce(ctx, *arg):
 		await ctx.send("you're not in a voice channel")
 
 	else:
-		if ctx.voice_client is not None:
-			await ctx.voice_client.move_to(ctx.author.voice.channel)
 
 		await ctx.author.voice.channel.connect()
 
 		choice = arg[0]
+
+		ctx.voice_client.play(discord.FFmpegPCMAudio(choice), after=lambda e: print('Player error: %s' % e) if e else None)
+
+		while ctx.voice_client.is_playing():
+			await sleep(0.01)
+
+		await ctx.voice_client.disconnect()
+
+@bot.command()
+async def playonce(ctx, *arg):
+
+	if(len(arg) != 0):
+		await ctx.send("usage: playonce")
+
+	elif(ctx.author.voice == None):
+		await ctx.send("you're not in a voice channel")
+
+	else:
+
+		await ctx.author.voice.channel.connect()
+
+		samples = get_samples(config_path)
+
+		ordered_samples = []
+		ordered_weights = []
+
+		for key, sample in samples.items():
+			ordered_samples.append(sample["path"])
+			ordered_weights.append(sample["weight"])
+
+		choice = random.choices(ordered_samples, ordered_weights, k = 1)[0]
 
 		ctx.voice_client.play(discord.FFmpegPCMAudio(choice), after=lambda e: print('Player error: %s' % e) if e else None)
 

@@ -56,6 +56,44 @@ async def setrole(ctx, *arg: discord.Role):
 
 		await ctx.send("set followable role to {0}".format(arg[0]))
 
+async def play_recursive(vc, target):
+
+	if(target == None):
+		return
+
+	samples = get_samples(config_path)
+
+	prefixes = samples[target]["prefix"]
+	prefix_name = []
+	prefix_weight = []
+	for p in prefixes:
+		prefix_name.append(p["name"])
+		prefix_weight.append(p["weight"])
+
+	prefix_choice = random.choices(prefix_name, prefix_weight, k = 1)[0]
+
+	await play_recursive(vc, prefix_choice)
+
+	print("playing " + target)
+
+	vc.play(discord.FFmpegPCMAudio(samples[target]["path"]), after=lambda e: print('Player error: %s' % e) if e else None)
+
+	while vc.is_playing():
+		await sleep(0.01)
+
+	suffixes = samples[target]["suffix"]
+	suffix_name = []
+	suffix_weight = []
+	for p in suffixes:
+		suffix_name.append(p["name"])
+		suffix_weight.append(p["weight"])
+
+	suffix_choice = random.choices(suffix_name, suffix_weight, k = 1)[0]
+
+	await play_recursive(vc, suffix_choice)
+
+	return 
+
 @bot.command()
 async def testonce(ctx, *arg):
 
@@ -89,7 +127,7 @@ async def playonce(ctx, *arg):
 
 	else:
 
-		await ctx.author.voice.channel.connect()
+		vc = await ctx.author.voice.channel.connect()
 
 		samples = get_samples(config_path)
 
@@ -97,14 +135,14 @@ async def playonce(ctx, *arg):
 		ordered_weights = []
 
 		for key, sample in samples.items():
-			ordered_samples.append(sample["path"])
+			ordered_samples.append(key)
 			ordered_weights.append(sample["weight"])
 
 		choice = random.choices(ordered_samples, ordered_weights, k = 1)[0]
 
-		ctx.voice_client.play(discord.FFmpegPCMAudio(choice), after=lambda e: print('Player error: %s' % e) if e else None)
+		await play_recursive(vc, choice)
 
-		while ctx.voice_client.is_playing():
+		while vc.is_playing():
 			await sleep(0.01)
 
 		await ctx.voice_client.disconnect()
@@ -134,7 +172,7 @@ async def on_voice_state_update(member: discord.Member, before, after):
 
 		choice = random.choices(ordered_samples, ordered_weights, k = 1)[0]
 
-		vc.play(discord.FFmpegPCMAudio(choice), after=lambda e: print('Player error: %s' % e) if e else None)
+		await play_recursive(vc, choice)
 
 		while vc.is_playing():
 			await sleep(0.01)

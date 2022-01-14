@@ -145,7 +145,7 @@ async def playonce(ctx, *arg):
 		while vc.is_playing():
 			await sleep(0.01)
 
-		await ctx.voice_client.disconnect()
+		await vc.disconnect()
 
 @bot.event
 async def on_voice_state_update(member: discord.Member, before, after):
@@ -167,7 +167,7 @@ async def on_voice_state_update(member: discord.Member, before, after):
 		ordered_weights = []
 
 		for key, sample in samples.items():
-			ordered_samples.append(sample["path"])
+			ordered_samples.append(key)
 			ordered_weights.append(sample["weight"])
 
 		choice = random.choices(ordered_samples, ordered_weights, k = 1)[0]

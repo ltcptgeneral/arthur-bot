@@ -26,7 +26,8 @@ bot = commands.Bot(command_prefix = determine_prefix, description='very cool', i
 async def on_ready():
 	print('Logged in as {0} ({0.id})'.format(bot.user))
 	print('------')
-
+	with open('democracy_man.jpg', 'rb') as image:
+		await bot.user.edit(avatar=image.read())
 
 @bot.command()
 async def setprefix(ctx, *arg):

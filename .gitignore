@@ -130,7 +130,5 @@ dmypy.json
 
 **/token
 **/roleid
-**/*.mp3
 **/prefix
 **/*.json
-**/*.jpg

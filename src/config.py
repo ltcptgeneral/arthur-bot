@@ -57,6 +57,22 @@ def get_roleid(config_path):
 	else:
 		return None
 
+def get_avatar(config_path):
+	config_vector = {}
+	success = load_config(config_path, config_vector)
+	if success == 0:
+		return config_vector["guild"]["avatar"]
+	else:
+		return None
+
+def get_username(config_path):
+	config_vector = {}
+	success = load_config(config_path, config_vector)
+	if success == 0:
+		return config_vector["guild"]["username"]
+	else:
+		return None
+
 def get_samples(config_path):
 	config_vector = {}
 	success = load_config(config_path, config_vector)

@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 import random
 
-from config import get_samples, get_token, get_prefix, get_roleid
+from config import get_samples, get_token, get_prefix, get_roleid, get_avatar, get_username
 
 config_path = "config.json"
 
@@ -26,7 +26,7 @@ bot = commands.Bot(command_prefix = determine_prefix, description='very cool', i
 async def on_ready():
 	print('Logged in as {0} ({0.id})'.format(bot.user))
 	print('------')
-	with open('democracy_man.jpg', 'rb') as image:
+	with open(get_avatar(config_path), 'rb') as image:
 		await bot.user.edit(avatar=image.read())
 
 @bot.command()

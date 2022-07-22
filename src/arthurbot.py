@@ -4,6 +4,7 @@ from sys import prefix
 import discord 
 from discord.ext import commands
 import random
+import yt_dlp
 
 from config import get_samples, get_token, get_prefix, get_roleid, get_avatar, get_username
 
@@ -26,8 +27,9 @@ bot = commands.Bot(command_prefix = determine_prefix, description='very cool', i
 async def on_ready():
 	print('Logged in as {0} ({0.id})'.format(bot.user))
 	print('------')
+	"""
 	with open(get_avatar(config_path), 'rb') as image:
-		await bot.user.edit(avatar=image.read())
+		await bot.user.edit(avatar=image.read())"""
 
 @bot.command()
 async def setprefix(ctx, *arg):
@@ -56,6 +58,44 @@ async def setrole(ctx, *arg: discord.Role):
 			f.close()
 
 		await ctx.send("set followable role to {0}".format(arg[0]))
+
+@bot.command()
+async def playmusic(ctx, *arg):
+
+	ydl_opts = {
+		'format': 'mp4',
+		'quiet': True,
+		'paths': {
+			'home': './session/'
+		},
+		'outtmpl': {
+			'default': '%(autonumber)s.%(ext)s',
+		},
+		'postprocessors': [{
+			'key': 'FFmpegExtractAudio',
+		}],
+	}
+
+	url = arg[0]
+
+	with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+		ydl.download([url])
+	
+	audio = "session/00001.m4a"
+
+	try:
+		await ctx.voice_client.disconnect()
+	except:
+		pass
+	
+	await ctx.author.voice.channel.connect()
+
+	ctx.voice_client.play(discord.FFmpegPCMAudio(audio), after=lambda e: print('Player error: %s' % e) if e else None)
+
+	while ctx.voice_client.is_playing():
+		await sleep(0.01)
+
+	await ctx.voice_client.disconnect()
 
 async def play_recursive(vc, target):
 

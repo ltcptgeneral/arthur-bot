@@ -76,26 +76,26 @@ async def playmusic(ctx, *arg):
 		}],
 	}
 
-	url = arg[0]
-
-	with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-		ydl.download([url])
-	
-	audio = "session/00001.m4a"
-
 	try:
 		await ctx.voice_client.disconnect()
 	except:
 		pass
-	
-	await ctx.author.voice.channel.connect()
 
-	ctx.voice_client.play(discord.FFmpegPCMAudio(audio), after=lambda e: print('Player error: %s' % e) if e else None)
+	url = arg[0]
 
-	while ctx.voice_client.is_playing():
-		await sleep(0.01)
-
-	await ctx.voice_client.disconnect()
+	with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+		info = ydl.extract_info(url, download=False)
+		duration = info.get('duration')
+		if duration < 1200:
+			ydl.download([url])
+			audio = "session/00001.m4a"
+			await ctx.author.voice.channel.connect()
+			ctx.voice_client.play(discord.FFmpegPCMAudio(audio), after=lambda e: print('Player error: %s' % e) if e else None)
+			while ctx.voice_client.is_playing():
+				await sleep(0.01)
+			await ctx.voice_client.disconnect()
+		else:
+			print("music requested " + str(url) + " was too long (" + str(duration) + " > 1200)")
 
 async def play_recursive(vc, target):
 

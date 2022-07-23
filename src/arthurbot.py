@@ -95,7 +95,7 @@ async def playmusic(ctx, *arg):
 				await sleep(0.01)
 			await ctx.voice_client.disconnect()
 		else:
-			print("music requested " + str(url) + " was too long (" + str(duration) + " > 1200)")
+			await ctx.send("music requested was too long ({0} > 1200)".format(duration))
 
 async def play_recursive(vc, target):
 

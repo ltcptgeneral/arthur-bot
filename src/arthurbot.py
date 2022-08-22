@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 import random
 
-from config import get_samples, get_token, get_prefix, get_roleid, get_avatar, get_username
+from config import *
 
 config_path = "config.json"
 
@@ -12,23 +12,24 @@ ffmpeg_options = {
 	'options': '-vn'
 }
 
-token = get_token(config_path)
-
-async def determine_prefix(bot, message):
-	return get_prefix(config_path)
+config = {}
+x = load_config(config_path, config)
+if x == 1:
+	print('Failed to load config, exiting')
+	exit(1)
+token = config['guild']['token']
+prefix = config['guild']['prefix']
 
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
-bot = commands.Bot(command_prefix = determine_prefix, description='very cool', intents = intents)
+bot = commands.Bot(command_prefix = prefix, description='very cool', intents = intents)
+bot.config = config
 
 @bot.event
 async def on_ready():
 	print('Logged in as {0} ({0.id})'.format(bot.user))
 	print('------')
-	"""
-	with open(get_avatar(config_path), 'rb') as image:
-		await bot.user.edit(avatar=image.read())"""
 
 @bot.command()
 async def setprefix(ctx, *arg):
@@ -38,9 +39,8 @@ async def setprefix(ctx, *arg):
 	else:
 		prefix = arg[0]
 
-		with open("prefix", "w") as f:
-			f.write(prefix)
-			f.close()
+		bot.config['guild']['prefix'] = prefix
+		save_config(config_path, bot.config)
 
 		await ctx.send("set prefix to: {0}".format(prefix))
 
@@ -52,9 +52,8 @@ async def setrole(ctx, *arg: discord.Role):
 	else:
 		roleid = arg[0].id
 
-		with open("roleid", "w") as f:
-			f.write(str(roleid))
-			f.close()
+		bot.config['guild']['roleid'] = prefix
+		save_config(config_path, bot.config)
 
 		await ctx.send("set followable role to {0}".format(arg[0]))
 
@@ -63,7 +62,7 @@ async def play_recursive(vc, target):
 	if(target == None):
 		return
 
-	samples = get_samples(config_path)
+	samples = bot.config['samples']
 
 	prefixes = samples[target]["prefix"]
 	prefix_name = []
@@ -131,7 +130,7 @@ async def playonce(ctx, *arg):
 
 		vc = await ctx.author.voice.channel.connect()
 
-		samples = get_samples(config_path)
+		samples = bot.config['samples']
 
 		ordered_samples = []
 		ordered_weights = []
@@ -154,7 +153,7 @@ async def on_voice_state_update(member: discord.Member, before, after):
 	vc_before = before.channel
 	vc_after = after.channel
 	
-	roleid = get_roleid(config_path)
+	roleid = bot.config['guild']['roleid']
 
 	if((member.id == bot.user.id) or (member.bot) or (roleid not in [role.id for role in member.roles]) or (before.channel == after.channel) or (after.channel == None)):
 		return
@@ -163,7 +162,7 @@ async def on_voice_state_update(member: discord.Member, before, after):
 		channel = member.voice.channel
 		vc = await channel.connect()
 		
-		samples = get_samples(config_path)
+		samples = bot.config['samples']
 
 		ordered_samples = []
 		ordered_weights = []

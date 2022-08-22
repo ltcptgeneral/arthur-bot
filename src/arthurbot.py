@@ -1,10 +1,8 @@
-import asyncio
 from asyncio import sleep
 from sys import prefix
 import discord 
 from discord.ext import commands
 import random
-import yt_dlp
 
 from config import get_samples, get_token, get_prefix, get_roleid, get_avatar, get_username
 
@@ -21,6 +19,7 @@ async def determine_prefix(bot, message):
 
 intents = discord.Intents.default()
 intents.members = True
+intents.message_content = True
 bot = commands.Bot(command_prefix = determine_prefix, description='very cool', intents = intents)
 
 @bot.event
@@ -58,44 +57,6 @@ async def setrole(ctx, *arg: discord.Role):
 			f.close()
 
 		await ctx.send("set followable role to {0}".format(arg[0]))
-
-@bot.command()
-async def playmusic(ctx, *arg):
-
-	ydl_opts = {
-		'format': 'mp4',
-		'quiet': True,
-		'paths': {
-			'home': './session/'
-		},
-		'outtmpl': {
-			'default': '%(autonumber)s.%(ext)s',
-		},
-		'postprocessors': [{
-			'key': 'FFmpegExtractAudio',
-		}],
-	}
-
-	try:
-		await ctx.voice_client.disconnect()
-	except:
-		pass
-
-	url = arg[0]
-
-	with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-		info = ydl.extract_info(url, download=False)
-		duration = info.get('duration')
-		if duration < 1200:
-			ydl.download([url])
-			audio = "session/00001.m4a"
-			await ctx.author.voice.channel.connect()
-			ctx.voice_client.play(discord.FFmpegPCMAudio(audio), after=lambda e: print('Player error: %s' % e) if e else None)
-			while ctx.voice_client.is_playing():
-				await sleep(0.01)
-			await ctx.voice_client.disconnect()
-		else:
-			await ctx.send("music requested was too long ({0} > 1200)".format(duration))
 
 async def play_recursive(vc, target):
 

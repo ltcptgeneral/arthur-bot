@@ -173,10 +173,14 @@ async def on_voice_state_update(member: discord.Member, before, after):
 
 		choice = random.choices(ordered_samples, ordered_weights, k = 1)[0]
 
+		await sleep(0.5)
+
 		await play_recursive(vc, choice)
 
 		while vc.is_playing():
 			await sleep(0.01)
+
+		await sleep(0.5)
 
 		await vc.disconnect()
 
